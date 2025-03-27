@@ -13,10 +13,6 @@ A modern, scalable, and robust Todo application built with NestJS for the backen
 - **Docker Containerization**: Easy deployment and scaling
 - **Responsive UI**: Modern React frontend with Apollo Client
 
-## Architecture
-
-![Architecture Diagram](https://mermaid.ink/img/pako:eNqNkj1PwzAQhv_KySYQEtSdkJAYYACpZWFAvVybS2PVsaPYrqqq_51L0jR8CDCZ-97H53t9GmUcUYOydRzJWBN7G1rPUXhqLG-7lOQQI3nUQwrMHUecSXu0JLZLwfHCGQUz4xR6ux6jtYPkycfBW5e9jfyMafCWNvG2JQmDCYOJsNGSG8JPJLELlHMfnO_c0JTEZ3B1XpMbOzGHsyP1mWazx7uEIQlYGJEE31OAQKkeD85n2YgcYxDKzkQvg-e65tGdj_3FcFHsxu1Wo7QY3F7ug_nEJrLtUJOTbzIbZRRkdPkVFVX1q6ipCVFdnUJVP6E-nf2F-rLuhyp_jPrfUO8pKVYvDxRtAb50O1QdagNDUbxaWLX1QlPFxEEXDX4Khu9WzUodGu0h94IVmmG1h0I76XLRTdEZfKfIewtfXfVt-wFwecbm?type=png)
-
 ## Project Structure
 
 ```
