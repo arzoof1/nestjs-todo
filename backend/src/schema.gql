@@ -1,0 +1,41 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+input CreateTodoInput {
+  completed: Boolean
+  description: String
+  title: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Mutation {
+  createTodo(createTodoInput: CreateTodoInput!): TodoType!
+  deleteTodo(id: ID!): Boolean!
+  updateTodo(updateTodoInput: UpdateTodoInput!): TodoType!
+}
+
+type Query {
+  todo(id: ID!): TodoType
+  todos: [TodoType!]!
+}
+
+type TodoType {
+  completed: Boolean!
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  title: String!
+  updatedAt: DateTime!
+}
+
+input UpdateTodoInput {
+  completed: Boolean
+  description: String
+  id: ID!
+  title: String
+}

@@ -1,0 +1,255 @@
+services:
+  # Backend (NestJS with Apollo GraphQL)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nestjs-backend
+    ports:
+      - "4000:4000"  # GraphQL server port
+    volumes:
+      - ./backend:/app/backend
+      - /app/backend/node_modules
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/todos
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_QUEUE=todo_queue
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - NODE_OPTIONS=--max-old-space-size=2048
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/src
+          target: /app/backend/src
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./backend/package.json
+
+  # Frontend (React with Apollo Client)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nextjs-frontend
+    ports:
+      - "3000:3000"  # React dev server
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_GRAPHQL_URI=http://backend:4000/graphql
+      - NODE_OPTIONS=--max-old-space-size=2048
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /app/frontend/src
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./frontend/package.json
+
+  # MongoDB
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # Redis (for caching and GraphQL subscriptions)
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # RabbitMQ (for message queuing)
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"  # AMQP port
+      - "15672:15672"  # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ELK Stack: Elasticsearch
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=elastic123
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.authc.api_key.enabled=true
+      - action.auto_create_index=.watches,.triggered_watches,.watcher-history-*,.fleet*,.monitoring*,metrics-*,logs-*,.kibana*,*
+      - xpack.license.self_generated.type=basic
+      - xpack.security.authc.realms.native.native1.order=0
+      - xpack.security.authc.token.enabled=true
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ELK Stack: Logstash
+  logstash:
+    image: logstash:8.11.0
+    volumes:
+      - ./logstash-pipeline:/usr/share/logstash/pipeline
+    ports:
+      - "5044:5044"
+      - "5045:5045/udp"
+    environment:
+      - XPACK_MONITORING_ENABLED=false
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USER=elastic
+      - ELASTICSEARCH_PASSWORD=elastic123
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ELK Stack: Kibana
+  kibana:
+    image: kibana:8.11.0
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=kibana123
+      - XPACK_SECURITY_ENCRYPTIONKEY=encryptionkey123456789012345678901234
+      - XPACK_REPORTING_ENCRYPTIONKEY=encryptionkey123456789012345678901234
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=encryptionkey123456789012345678901234
+      - XPACK_FLEET_ENABLED=true
+      - XPACK_FLEET_REGISTRYURL=https://fleet.elastic.co
+      - ELASTICSEARCH_SSL_VERIFICATIONMODE=none
+      - XPACK_REPORTING_CAPTURE_BROWSER_CHROMIUM_DISABLESANDBOX=true
+      - XPACK_FLEET_AGENTS_ELASTICSEARCH_HOSTS=["http://elasticsearch:9200"]
+      - XPACK_FLEET_AGENTS_ELASTICSEARCH_USERNAME=fleet_setup
+      - XPACK_FLEET_AGENTS_ELASTICSEARCH_PASSWORD=kibana123
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      setup_elasticsearch:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # Filebeat (log collector)
+  filebeat:
+    image: elastic/filebeat:8.11.0
+    volumes:
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: filebeat -e -strict.perms=false
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      logstash:
+        condition: service_started
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # Elasticsearch setup container
+  setup_elasticsearch:
+    image: curlimages/curl:8.1.1
+    volumes:
+      - ./setup-elastic.sh:/usr/local/bin/setup-elastic.sh
+    command: ["/bin/sh", "-c", "chmod +x /usr/local/bin/setup-elastic.sh && /usr/local/bin/setup-elastic.sh"]
+    environment:
+      - ELASTIC_PASSWORD=elastic123
+      - KIBANA_PASSWORD=kibana123
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  mongodb_data:
+  es-data:
+
+networks:
+  app-network:
+    driver: bridge
