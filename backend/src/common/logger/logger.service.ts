@@ -1,12 +1,17 @@
 import { Injectable, LoggerService as NestLoggerService } from '@nestjs/common';
 
+// Define a type for log additional data that can be any JSON-serializable value
+export type LogValue = string | number | boolean | null | LogObject | LogArray;
+export interface LogObject { [key: string]: LogValue }
+export interface LogArray extends Array<LogValue> {}
+
 interface LogPayload {
   context?: string;
   message: string;
   timestamp?: string;
   level?: string;
   trace?: string;
-  additional?: Record<string, any>;
+  additional?: Record<string, LogValue>;
 }
 
 @Injectable()
@@ -15,7 +20,7 @@ export class LoggerService implements NestLoggerService {
     message: string,
     context?: string,
     trace?: string,
-    additional?: Record<string, any>,
+    additional?: Record<string, LogValue>,
   ): LogPayload {
     return {
       message,
@@ -38,7 +43,7 @@ export class LoggerService implements NestLoggerService {
   log(
     message: string,
     context?: string,
-    additional?: Record<string, any>,
+    additional?: Record<string, LogValue>,
   ): void {
     const payload = this.createLogPayload(
       message,
@@ -54,7 +59,7 @@ export class LoggerService implements NestLoggerService {
     message: string,
     trace?: string,
     context?: string,
-    additional?: Record<string, any>,
+    additional?: Record<string, LogValue>,
   ): void {
     const payload = this.createLogPayload(message, context, trace, additional);
     payload.level = 'error';
@@ -64,7 +69,7 @@ export class LoggerService implements NestLoggerService {
   warn(
     message: string,
     context?: string,
-    additional?: Record<string, any>,
+    additional?: Record<string, LogValue>,
   ): void {
     const payload = this.createLogPayload(
       message,
@@ -79,7 +84,7 @@ export class LoggerService implements NestLoggerService {
   debug(
     message: string,
     context?: string,
-    additional?: Record<string, any>,
+    additional?: Record<string, LogValue>,
   ): void {
     const payload = this.createLogPayload(
       message,
@@ -94,7 +99,7 @@ export class LoggerService implements NestLoggerService {
   verbose(
     message: string,
     context?: string,
-    additional?: Record<string, any>,
+    additional?: Record<string, LogValue>,
   ): void {
     const payload = this.createLogPayload(
       message,

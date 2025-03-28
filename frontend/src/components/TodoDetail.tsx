@@ -5,7 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_TODO } from '../graphql/todoQueries';
 import { UPDATE_TODO, DELETE_TODO } from '../graphql/todoMutations';
-import { TodoData, TodoVariables, UpdateTodoVariables, DeleteTodoVariables } from '../types/todo';
+import { 
+  TodoData, 
+  TodoVariables, 
+  UpdateTodoVariables, 
+  DeleteTodoVariables,
+  UpdateTodoData,
+  DeleteTodoData
+} from '../types/todo';
 import {
   Paper,
   Typography,
@@ -42,13 +49,13 @@ export const TodoDetail: React.FC = () => {
     }
   });
 
-  const [updateTodo, { loading: updateLoading }] = useMutation<any, UpdateTodoVariables>(UPDATE_TODO, {
+  const [updateTodo, { loading: updateLoading }] = useMutation<UpdateTodoData, UpdateTodoVariables>(UPDATE_TODO, {
     onCompleted: () => {
       setIsEditing(false);
     }
   });
 
-  const [deleteTodo, { loading: deleteLoading }] = useMutation<any, DeleteTodoVariables>(DELETE_TODO, {
+  const [deleteTodo, { loading: deleteLoading }] = useMutation<DeleteTodoData, DeleteTodoVariables>(DELETE_TODO, {
     onCompleted: () => {
       router.push('/');
     }

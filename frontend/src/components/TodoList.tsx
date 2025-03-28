@@ -4,7 +4,13 @@ import React from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_TODOS } from '../graphql/todoQueries';
 import { UPDATE_TODO, DELETE_TODO } from '../graphql/todoMutations';
-import { TodosData, UpdateTodoVariables, DeleteTodoVariables } from '../types/todo';
+import { 
+  TodosData, 
+  UpdateTodoVariables, 
+  DeleteTodoVariables, 
+  UpdateTodoData,
+  DeleteTodoData
+} from '../types/todo';
 import { useRouter } from 'next/navigation';
 import { 
   List, 
@@ -25,11 +31,11 @@ export const TodoList: React.FC = () => {
   const router = useRouter();
   const { loading, error, data } = useQuery<TodosData>(GET_TODOS);
   
-  const [updateTodo] = useMutation<any, UpdateTodoVariables>(UPDATE_TODO, {
+  const [updateTodo] = useMutation<UpdateTodoData, UpdateTodoVariables>(UPDATE_TODO, {
     refetchQueries: [{ query: GET_TODOS }]
   });
   
-  const [deleteTodo] = useMutation<any, DeleteTodoVariables>(DELETE_TODO, {
+  const [deleteTodo] = useMutation<DeleteTodoData, DeleteTodoVariables>(DELETE_TODO, {
     refetchQueries: [{ query: GET_TODOS }]
   });
 
